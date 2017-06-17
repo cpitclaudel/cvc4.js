@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>CVC4.js demo</title>
+    <link rel="stylesheet" href="cvc4.css">
+    <script src="./demo.js"></script>
+  </head>
+  <body>
+    <div id="main">
+      <h1>CVC4.js</h1>
+
+      <div id="editor">;; Source: http://smtlib.github.io/jSMTLIB/SMTLIBTutorial.pdf (p. 12)
+(set-option :print-success false)
+(set-option :produce-models true)
+(set-option :interactive-mode true)
+(set-logic QF_LIA)
+(declare-fun x () Int)
+(declare-fun y () Int)
+(assert (= (+ x (* 2 y)) 20))
+(assert (= (- x y) 2))
+(check-sat)
+(get-value (x y))
+(exit)</div>
+
+      <p id="examples-box"><span id="examples"></span> (source: <a href="http://smtlib.cs.uiowa.edu/examples.shtml">SMTLIB</a>)</p>
+
+      <hr />
+
+      <div id="control-panel">
+        <div class="row">
+          <input class="cell" id="command-line-args" type="text" value="--lang smt" />
+          <span id="run-cell"><input id="run" type="button" value="" disabled="disabled" /></span>
+        </div>
+      </div>
+      <pre id="stdout"></pre>
+
+      <div id="footer">
+        Assembled by <a href="http://pit-claudel.fr/clement/">Clément Pit-Claudel</a> by compiling <a href="http://cvc4.cs.stanford.edu/web/">CVC4</a> v1.5-prerelease/209b088, <a href="https://gmplib.org/">GNU MP</a> v6.1.2 and <a href="http://antlr.org/">ANTLR's C runtime</a> v3.2 with <a href="http://kripken.github.io/emscripten-site/">Emscripten</a>.
+      </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.6/ace.js" integrity="sha256-xrr4HH5eSY+cFz4SH7ja/LaAi9qcEdjMpeMP49/iOLs=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.6/mode-lisp.js" integrity="sha256-wfwED8MuFsljraPmCVHtcP7jjyi6ffnB1kk1kY2ha5g=" crossorigin="anonymous"></script>
+    <script src="./smtlib_examples.js"></script>
+
+    <script>
+      var emscripten = {};
+      var demo = makeCVC4Demo(console, window, document, performance, smtlib_examples, ace, emscripten);
+      demo.init();
+      demo.disableButton("Downloading CVC4…");
+      console.log("Downloading CVC4…", performance.now());
+    </script>
+    <script src="./cvc4.js"></script>
+    <script>
+      demo.disableButton("Initializing CVC4…");
+      console.log("Initializing CVC4…", performance.now());
+      setTimeout(function() { CVC4(emscripten) }, 0); // Populate the ‘emscripten’ object given to ‘makeCVC4Demo’.
+    </script>
+  </body>
+</html>
