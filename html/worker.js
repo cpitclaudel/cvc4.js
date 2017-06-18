@@ -1,25 +1,25 @@
 function makeWorker(self, console, queries, responses, performance) {
     var INPUT_FNAME = "input.smt";
 
-    var cvc4;
+    var solver;
     var ready = false;
 
     function postMessage(kind, payload) {
-        console.info("[CVC4] → Window (" + kind + "):", payload);
+        console.info("[SMT] → Window (" + kind + "):", payload);
         self.postMessage({ kind: kind, payload: payload });
     }
 
-    function runCVC4(input, args) {
+    function runSolver(input, args) {
         if (!ready) {
-            console.error("Cannot run CVC4 yet.");
+            console.error("Cannot run SMT solver yet.");
             postMessage(responses.DONE, false);
             return;
         }
 
         args.push(INPUT_FNAME);
-        console.log("Running CVC4 with", args);
-        cvc4.FS.writeFile(INPUT_FNAME, input, { encoding: "utf8" });
-        cvc4.callMain(args);
+        console.log("Running SMT solver with", args);
+        solver.FS.writeFile(INPUT_FNAME, input, { encoding: "utf8" });
+        solver.callMain(args);
         postMessage(responses.VERIFICATION_COMPLETE, true);
     }
 
@@ -30,33 +30,34 @@ function makeWorker(self, console, queries, responses, performance) {
 
     function onRuntimeInitialized() {
         ready = true;
-        progress("Done initializing CVC4.");
+        progress("Done initializing SMT solver.");
         postMessage(responses.READY);
     }
 
-    function loadCVC4() {
-        progress("Downloading CVC4…");
-        self.importScripts("cvc4-outlined-10k.debug.js");
-        progress("Initializing CVC4…");
-        cvc4 = CVC4({ ENVIRONMENT: "WORKER",
-                      onRuntimeInitialized: onRuntimeInitialized,
-                      print: function(message) { postMessage(responses.STDOUT, message); },
-                      printErr: function(message) { postMessage(responses.STDERR, message); } });
+    function loadSolver() {
+        progress("Downloading SMT solver…");
+        self.importScripts("cvc4-outlined-10k.assertions.large-stack.wasm.js");
+        progress("Initializing SMT solver…");
+        var factory = (typeof Z3 === 'undefined') ? CVC4 : Z3;
+        solver = factory({ ENVIRONMENT: "WORKER",
+                           onRuntimeInitialized: onRuntimeInitialized,
+                           print: function(message) { postMessage(responses.STDOUT, message); },
+                           printErr: function(message) { postMessage(responses.STDERR, message); } });
     }
 
     function onMessage(event) {
-        console.info("Window → [CVC4]:", event);
+        console.info("Window → [SMT]:", event);
         var kind = event.data.kind;
         var payload = event.data.payload;
         switch (kind) {
         case queries.VERIFY:
-            runCVC4(payload.input, payload.args);
+            runSolver(payload.input, payload.args);
             break;
         }
     }
 
     function init() {
-        loadCVC4();
+        loadSolver();
         self.onmessage = onMessage;
     }
 
