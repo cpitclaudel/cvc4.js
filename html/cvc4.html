@@ -43,19 +43,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.6/ace.js" integrity="sha256-xrr4HH5eSY+cFz4SH7ja/LaAi9qcEdjMpeMP49/iOLs=" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.6/mode-lisp.js" integrity="sha256-wfwED8MuFsljraPmCVHtcP7jjyi6ffnB1kk1kY2ha5g=" crossorigin="anonymous"></script>
     <script src="./smtlib_examples.js"></script>
+    <script src="./protocol.js"></script>
 
     <script>
-      var emscripten = {};
-      var demo = makeCVC4Demo(console, window, document, performance, smtlib_examples, ace, emscripten);
-      demo.init();
-      demo.disableButton("Downloading CVC4…");
-      console.log("Downloading CVC4…", performance.now());
-    </script>
-    <script src="./cvc4.js"></script>
-    <script>
-      demo.disableButton("Initializing CVC4…");
-      console.log("Initializing CVC4…", performance.now());
-      setTimeout(function() { CVC4(emscripten) }, 0); // Populate the ‘emscripten’ object given to ‘makeCVC4Demo’.
+      makeCVC4Demo(window, queries, responses, smtlib_examples, ace).init();
     </script>
   </body>
 </html>

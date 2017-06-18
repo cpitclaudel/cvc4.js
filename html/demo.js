@@ -1,42 +1,19 @@
 /* exported makeCVC4Demo */
-function makeCVC4Demo(console, window, document, performance, examples, ace, emscripten) {
-    var INPUT_FNAME = "input.smt";
+function makeCVC4Demo(window, queries, responses, examples, ace) {
+    var editor;
+    var worker;
+    var verification_start;
 
-    var runtime_ready = false;
-    var editor = ace.edit("editor");
-
+    var console = window.console;
+    var document = window.document;
     var command_line_args = document.getElementById("command-line-args");
     var run_button = document.getElementById("run");
     var stdout_textbox = document.getElementById("stdout");
     var examples_node = document.getElementById("examples");
 
-    function setupAceEditor() {
-        editor.setTheme("ace/theme/monokai");
-        editor.getSession().setMode("ace/mode/lisp");
-        editor.setOptions({ fontFamily: "Ubuntu Mono, monospace", fontSize: "1rem" });
-    }
-
-    function runCVC4(input, args) {
-        if (!runtime_ready) {
-            console.error("Cannot run CVC4 yet.");
-            return;
-        }
-
-        args.push(INPUT_FNAME);
-        console.log("Running CVC4 with", args);
-        emscripten.FS.writeFile(INPUT_FNAME, input, { encoding: "utf8" });
-
-        var start = performance.now();
-        emscripten.callMain(args);
-        var end = performance.now();
-        receiveOutput("-- Verification took " + Math.round(end - start) + "ms");
-    }
-
-    function receiveOutput(text) {
-        // stdout_textbox.value += text + "\n";
-        var text_node = document.createTextNode(text + "\n");
-        stdout_textbox.appendChild(text_node);
-        stdout_textbox.appendChild(text_node);
+    function postCVC4Message(query, payload) {
+        console.info("[Window] → CVC4 (" + query + "):", payload);
+        worker.postMessage({ kind: query, payload: payload });
     }
 
     function clear(node) {
@@ -56,11 +33,52 @@ function makeCVC4Demo(console, window, document, performance, examples, ace, ems
     }
 
     function verifyCurrentInput(_event) {
-        var code = editor.getValue();
+        var input = editor.getValue();
         var args = command_line_args.value.split(/ +/);
-        disableButton("Running…");
         clear(stdout_textbox);
-        window.setTimeout(function() { runCVC4(code, args); enableButton(); }, 0);
+        disableButton("Running…");
+        verification_start = window.performance.now();
+        postCVC4Message(queries.VERIFY, { args: args, input: input });
+    }
+
+    function logOutput(message) {
+        var text_node = window.document.createTextNode(message + "\n");
+        stdout_textbox.appendChild(text_node);
+    }
+
+    function onCVC4Message(event) {
+        console.info("CVC4 → [Window]:", event);
+        var kind = event.data.kind;
+        var payload = event.data.payload;
+        switch (kind) {
+        case responses.PROGRESS:
+            disableButton(payload);
+            break;
+        case responses.READY:
+            enableButton();
+            break;
+        case responses.STDOUT:
+        case responses.STDERR:
+            logOutput(payload)
+            break;
+        case responses.VERIFICATION_COMPLETE:
+            enableButton();
+            var elapsed = Math.round(window.performance.now() - verification_start);
+            logOutput ("-- Verification complete (" + elapsed + "ms)");
+            break;
+        }
+    }
+
+    function setupCVC4Worker() {
+        worker = new window.Worker("worker.js");
+        worker.onmessage = onCVC4Message;
+    }
+
+    function setupAceEditor() {
+        editor = ace.edit("editor");
+        editor.setTheme("ace/theme/monokai");
+        editor.getSession().setMode("ace/mode/lisp");
+        editor.setOptions({ fontFamily: "Ubuntu Mono, monospace", fontSize: "1rem" });
     }
 
     function loadExample() {
@@ -82,22 +100,13 @@ function makeCVC4Demo(console, window, document, performance, examples, ace, ems
         examples_node.removeChild(examples_node.lastChild);
     }
 
-    function onRuntimeInitialized() {
-        runtime_ready = true;
-        console.info("Done initializing CVC4.", performance.now());
-        enableButton();
-    }
-
     function init() {
-        clear(stdout_textbox);
         addExamples();
         setupAceEditor();
-        emscripten.onRuntimeInitialized = onRuntimeInitialized;
-        emscripten.print = receiveOutput;
-        emscripten.printErr = receiveOutput;
+        setupCVC4Worker();
+        clear(stdout_textbox);
         run_button.onclick = verifyCurrentInput;
     }
 
-    return { init: init,
-             disableButton: disableButton };
+    return { init: init };
 }

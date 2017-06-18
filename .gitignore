@@ -1,2 +1,5 @@
 /html/cvc4.js
 /html/cvc4.js.mem
+cvc4*.js
+cvc4*.mem
+cvc4*.wasm
