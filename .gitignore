@@ -1,5 +1,6 @@
-/html/cvc4.js
-/html/cvc4.js.mem
 cvc4*.js
 cvc4*.mem
 cvc4*.wasm
+z3*.js
+z3*.mem
+z3*.wasm

@@ -36,7 +36,7 @@ function makeWorker(self, console, queries, responses, performance) {
 
     function loadSolver() {
         progress("Downloading SMT solver…");
-        self.importScripts("cvc4-outlined-10k.assertions.large-stack.wasm.js");
+        self.importScripts("cvc4-outlined-200k.wasm.js");
         progress("Initializing SMT solver…");
         var factory = (typeof Z3 === 'undefined') ? CVC4 : Z3;
         solver = factory({ ENVIRONMENT: "WORKER",
