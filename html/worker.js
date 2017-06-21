@@ -36,13 +36,12 @@ function makeWorker(self, console, queries, responses, performance) {
 
     function loadSolver() {
         progress("Downloading SMT solver…");
-        self.importScripts("cvc4-outlined-200k.wasm.js");
+        self.importScripts("cvc4.js");
         progress("Initializing SMT solver…");
-        var factory = (typeof Z3 === 'undefined') ? CVC4 : Z3;
-        solver = factory({ ENVIRONMENT: "WORKER",
-                           onRuntimeInitialized: onRuntimeInitialized,
-                           print: function(message) { postMessage(responses.STDOUT, message); },
-                           printErr: function(message) { postMessage(responses.STDERR, message); } });
+        solver = CVC4({ ENVIRONMENT: "WORKER",
+                        onRuntimeInitialized: onRuntimeInitialized,
+                        print: function(message) { postMessage(responses.STDOUT, message); },
+                        printErr: function(message) { postMessage(responses.STDERR, message); } });
     }
 
     function onMessage(event) {
